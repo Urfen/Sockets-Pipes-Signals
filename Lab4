@@ -1,0 +1,128 @@
+Signal manualsida:
+
+beteendet av signal() varierar över olika UNIX versioner och har dessutom varierat historiskt sett mycket mellan olika versioner av Linux. Undvik att använda signal(), använd sigaction(2) istället.
+
+signal() sätter dispositionen av signal signum till en hanterare, vilket antingen är SIG_IGN, SIG_DFL eller adressen till en programmerar-definierad signalhanterare (en funktion).
+
+Om signalen signum levereras till processen så händer något av följande:
+Om dispositionen är satt till SIG_IGN så är signalen ignorerad.
+Om dispositionen är satt till SIG_DFL så sker default-aktionen associerad med signalen.
+
+Om dispositionen är satt till en funktion så resettas antingen dispositionen till SIG_DFL eller så blockeras signalen och hanteraren anropas med argument signum.
+
+Signalerna SIGKILL och SIGSTOP kan inte ignoreras eller fångas.
+
+Sigaction manualsida:
+
+sigaction() är ett systemanrop som används för att ändra aktionerna av en process på ett recept av en specifik signal. 
+
+signum specifierar signalen och kan vara godtycklig signal föruto SIGKILL och SIGSTOP. 
+sigaction structen är definierad som:
+
+	           struct sigaction 
+	{
+               void     (*sa_handler)(int);
+               void     (*sa_sigaction)(int, siginfo_t *, void *);
+               sigset_t   sa_mask;
+               int        sa_flags;
+               void     (*sa_restorer)(void);
+           };
+
+sa_handler specifierar aktionen som ska associeras med signum och kan t.e.x vara SIG_DFL som defaul aktion eller SIG_IGN för att ignorera signalen alternativt en pekare till en signalhanterare.
+
+(Om SA_SIGINGO är specifierat i sa_flags så är det sa_sigaction (istället för sa_handler) som specifierar signal hanteringen av funktionen för signum)
+
+sa_mask specifierar en mask av signaler som ska blockeras (alltså adderas till signal mask av tråden som signal hanteraren startades av).
+
+sa_flags specifierar en mängd flaggor som modifierar beteendet av signalen. 
+
+
+Default signal för kill är TERM (dödar en process) kill pid dödar alltså pid. Men kill kan även användas för att skicka andra typer av signaler med syntaxen kill -<signal> pid. 
+
+SIGHUP är en signal som skickas till en process när dess "kontrollerande terminal" stängs.
+
+int pipe2(int pipefd[2], int flags);
+
+pipe() skapar en pipe, en icke-riktad data kanal som kan användas för kommunikation mellan processer. Arrayen pipefd används för att returnera två file descriptors som refererar till delarna av pipen. pipefd[0] refererar till läsning av "slutet" av pipen. pipefd[1] refererar till skrivning i "början" av pipen. Data som skrivs till write-änden av pipen buffras till kärnan till den läses från read-änden av pipen. 
+
+
+testprogrammet: Programmet skapar en pipe och forkar sedan för att skapa child process. Child ärver ett duplicerat sätt av file descriptors som refererar till samma pipe. Efter fork() så stänger varje process sina fildescriptors som den inte behöver för pipen. Parent skriver sedan strängen som anges i programmets kommando-rad argument till pipen och child läser denna sträng (en byte i taget) från pipen och skriver sedan ut den till standard output.
+
+
+write/3:
+ssize_t write(int fildes, const void *buf, size_t nbyte);
+
+write() funktionen kommer försöka skriva nbyte bytes från buffern som pekas på av buf till filen associerad med fil descriptorn fildes.
+
+STDOUT_FILENO är en integer file descriptor (integer 1 för att vara exakt). Den kan användas för systemanropet write() för att skriva till standard out.	
+STDOUT_FILENO == fileno(stdout)
+
+int dup2(int oldfd, int newfd)
+
+dup är ett systemanrop för att skapa en kopia av filens descriptor: oldfd.
+
+dup2 gör newfd till kopia av oldfd. Efter ett lyckat systemanrop till dup2 så kan oldfd och newfd användas omväxlande. Dem refererar till samma öppna fildescriptor (oldfd) och delar därför fil offset och filstatus flaggor. Dem delar dock inte fil descriptor flaggor. 
+Returvärdet vid success är den nya descriptorn , vid error: -1.
+
+http://stackoverflow.com/questions/2589906/unix-piping-using-fork-and-dup
+
+2 processer på samma system kan kommunicera med varandra genom pipes , meddelande köer, delat minne men hur kommunicerar dem över ett nätverk?
+Över ett nätverk kommunicerar processer m.h.a. SOCKETS.
+En socket är en ändpunkt av en kommunikation mellan två system på ett nätverk. För att vara precis så är en socket en kombination av en IP adress och en port på ett system. Så på varje system existerar det en socket  för en process som interagerar med en socket på ett annan system. TCP/P är den vanligasta nätverksmodellen.
+
+socket(int domain, int type, int protocol);
+funktionen socket() skapar en ändpunkt för kommunikation och returnerar en descriptor.
+Domän-argumentet specifierar en kommunikationsdomän. Denna domän väljer protokoll familjen vilket kommer användas för kommunikationen ex: AF_UNIX, AF_LOCAL : Lokal kommunikation.
+AF_INET: Ipv4 internet protokoll
+AF_INET6: Ipv6 Internet protokoll
+
+Argumentet type specifierar kommunikations-semantiken ex:
+SOCK_STREAM: sekvensiell pålitlig tvåvägs connection.
+
+Argumentet protocol specifierar ett specifikt protokoll som ska användes med socket. Om bara ett protkoll existerar för den specifierade protokoll familjen räcker det att skriva "0".
+
+Returvärde: Vid success så returneras en fil descriptor för den nya socketen. Vid error returneras -1.
+
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+
+getsockopt och setsockopt manipulerar inställningarna för socketen som refereras av fil descriptorn sockfd. Nät manipulering av inställningarna sker måste nivån (level) där inställningarna ska gällas specifieras. För att manipulera inställningar (options) på sockets API nivån så specifieras level-argumentet som SOL_SOCKET.
+
+void bzero(void *s, size_t n);
+
+bzero() funktionen sätter dem första n bytes av arean som börjar vid s till "zero" (bytes innehållandes '\0').
+
+http://www-01.ibm.com/support/knowledgecenter/ssw_ibm_i_71/apis/socket.htm
+
+int listen(int sockfd, inte backlog);
+
+listen() markerar socketen som refereras av sockfd som en passiv socket, alltså en socket som kommer användas för att acceptera inkommande connection förfrågningar med accept(2).
+
+backlog definierar maximum längd till vilken kön av väntande connections för sockfd får växa.
+Om en connection förfrågning sker när kän är full så kan klienten få ett error.
+retur värde: vid success: 0 annars -1.
+
+int accept(int sockfd, struct sockaddr *addr)
+
+accept() är ett systemanrop som används för connection-baserade socket typer (ex SOCK_STREAM). accept() drar ut första connection förfrågan från kön av väntande förfrågningar för att lyssna på sockfd, sedan skapar den en ny connectad socket och returnerar en fil descriptor som refererar till den socketen. Den nyskapade socketen är inte i listening-tillstånd.
+
+Argumentet sockfd är en socket som har skapats med socket(2) , bundits till en lokal adress med bind(2) och lyssnar efter connections efter att ha gjort listen(2).
+
+Argumentet addr är en pekare till en sockaddr struktur. Denna struktur fylls i med adressen av socketen. Det exakta formatet av adressen som returneras bestämst av socketens adress familj som bestäms i socket(2). returvärde: en icke negativ integer som är en descriptor för den accepterade socketen. Vid error: -1.
+
+I anropet till accept() så sätts vår server i sleep() tills det kommer en request som går igenom TCP-threeway handshake då vaknar servern upp och accept() returnerar socket descriptorn som representerar klientens socket.
+
+
+ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+
+recv används normalt sätt bara på en connected socket för att ta emot meddelanden. Om rutinen lyckas returneras längden av meddelandet. Om inga meddelanden finns tillgängliga väntar socketen på att ett meddelande ska anlända. 
+
+
+int strncmp(char *string1, char *string2, int n); 
+strncmp funktionen jämför de n första bokstäverna av string1 och string2 och returnerar sedan ett värde som indikerar deras förhållande. ( return<0 betyder string 1 mindre än string 2. == 0 betyder lika . 
+
+FILE *popen(const char *command, const char *type);
+popen() funktionen öppnar en process genom att skapa en pipe, forka och invoka shellen. Eftersom en pipe är av definition inte "riktad" så kan type-argumentet specifiera endast läsning eller endast skrivning. command-argumentet är en pekare till en null-terminerad sträng innehållandes en shell command line. Detta kommando skickas till /bin/sh genom att använda -c flaggan. Tolkningen (om det går) görs av shellen. Type-argumentet är en pekare till en nullterminerad sträng innehållandes anringen bokstaven 'r' för läsning eller bokstaven 'w' för skrivning. 
+
+Returvärdet från popen() är en normal standard I/O ström som i alla aspekter har vad den måste för att stängas med pclose() istället för fclose(). Att skriva till en sådan stream skriver till standard input av kommandot. 
+popen() returnerar NULL om något failar.
+

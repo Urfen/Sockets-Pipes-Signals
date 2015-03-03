@@ -89,9 +89,7 @@ static void server_loop(void) {
 }
 
 static void server_handler(void) {
-    unsigned long bufferlen = 0;
-    // char *msg;
-    // char buffer[MAXOUTPUT];;
+    unsigned long bufferlen = 0;;
     for (;/* EVER */;) 
       {
 	char *buffer = calloc(1,sizeof(int));
@@ -107,9 +105,8 @@ static void server_handler(void) {
 	if (strncmp(msg, "exit", 4) == 0)
 	  {
             clean_up(0);
+	    return;
 	  }
-	printf("Message received at server: %s \n", msg);
-	printf("buffer received at server: %s \n", buffer);
 	FILE* file = popen(msg,"r");
 	if(file == NULL)
 	  {
@@ -117,8 +114,6 @@ static void server_handler(void) {
 	  }
 	  while(fgets(result,MAXOUTPUT,file) != NULL)
 	    {
-	     	printf("result is :%s\n", result);
-		printf("Size of result: %lu \n", strlen(result));
 		int length[1];
 		length[0] = strlen(result);
 	        send(clientFD, (char*)length,sizeof(int),0);

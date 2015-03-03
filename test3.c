@@ -1,0 +1,48 @@
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
+
+#define READ_END 0
+#define WRITE_END 1
+
+int 
+main(int argc, char* argv[]) 
+{
+    pid_t pid;
+    int fd[2];
+
+    pipe(fd);
+    pid = fork();
+
+    if(pid==0)
+    {
+        printf("i'm the child used for ls \n");
+        dup2(fd[WRITE_END], STDOUT_FILENO);
+        close(fd[WRITE_END]);
+        execlp("ls", "ls", "-la", NULL);
+    }
+    else
+    { 
+        pid=fork();
+
+        if(pid==0)
+        {
+            printf("i'm in the second child, which will be used to run grep\n");
+            dup2(fd[READ_END], STDIN_FILENO);
+	        char buf[5000];
+		read(fd[0],buf,sizeof(buf));
+		// printf("read buf: %s \n",buf);
+            close(fd[READ_END]);
+	    execl("/bin/less", "less", buf,NULL); 
+	    perror("exec less failed");
+	    exit(EXIT_FAILURE);
+	    // execlp("grep", "grep", "alpha",NULL);
+        }
+    }
+
+
+    return 0;
+}

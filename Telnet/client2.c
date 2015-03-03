@@ -78,38 +78,25 @@ static void client_handler() {
 }
 static void handle_reply() {
     unsigned long bufferlen = 0;
-    //char msg[MAXCMD];
-    //char buffer[MAXCMD];
     char *msg = (char*) calloc(MAXCMD,sizeof(char));
     char *buffer = (char*) calloc(MAXCMD,sizeof(char));
     int i = 0;
     for(;;) {
         /* TODO receive message length...remember to check for errors! */
       buffer[0] = '\0'; // reset the buffer to be an empty string
-      //free(buffer);
       i = i + bufferlen;
       bufferlen = 0; // reset bufferlen
-      // printf("Waiting for response from server \n");
-      // printf("Buffer received at client: %s \n",buffer);
-      //printf("Message received at client: %s \n",msg);
       recv(socketFD,buffer,sizeof(int),0);
       bufferlen = buffer[0];
-      printf("buffer: %s \n",buffer);
-      //bufferlen = strlen(buffer);
-      printf("bufferlen: %lu bytes \n",bufferlen);
         if (bufferlen == 0)
 	  {
-	    printf("Zeero \n");
-	    printf("Message received at client: %s \n",msg);
+	    printf("Message received at client: \n%s \n",msg);
 	    free(msg);
 	    free(buffer);
             return; // finish on 0 length message
           }
 	recv(socketFD,msg+i,bufferlen,0);
         /* TODO receive incoming message into buffer...remember to check for errors! */
-	//	printf("\n");
-	// printf(msg);
-	//	printf("\n");
         /* TODO print message to stdout */
         
         /* TODO remember to allocate and free the receive buffer */

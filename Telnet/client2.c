@@ -22,6 +22,7 @@ static void handle_reply(void);
 static char *SIP, *SPORT;
 static int socketFD = -1;
 
+
 int main(int argc, char *argv[]) {
     in_addr_t serverIP;
     int portNumber;
@@ -53,19 +54,17 @@ int main(int argc, char *argv[]) {
 }
 
 static void client_handler() {
-  // char cmd[MAXCMD];
   char* cmd = (char*) calloc(MAXCMD,sizeof(char));
     for (;;){
         cmd[0] = '\0'; // reset the buffer to be an empty string
         fprintf(stdout, "%s:%s> ", SIP, SPORT);
-        /* TODO get command for the commandline */
+	//Read command from commandline.
         gets(cmd);
 	int length[1];
 	length[0] = strlen(cmd);
-        /* TODO send command length to the server */
+        //Send command length to server
 	send(socketFD, (char*)length, sizeof(int),0);
-	// send(socketFD, cmd, sizeof(cmd),0);
-        /* TODO send command to the server */
+	//Send command to server
 	cmd = realloc(cmd, strlen(cmd));
         send(socketFD, cmd, strlen(cmd),0);
         /* If command was "exit" we should also terminate on this side */
@@ -78,29 +77,32 @@ static void client_handler() {
 }
 static void handle_reply() {
     unsigned long bufferlen = 0;
-    char *msg = (char*) calloc(MAXCMD,sizeof(char));
+    char *msg = (char*) calloc(MAXCMD,sizeof(char)); //Allocate buffers.
     char *buffer = (char*) calloc(MAXCMD,sizeof(char));
     int i = 0;
     for(;;) {
         /* TODO receive message length...remember to check for errors! */
       buffer[0] = '\0'; // reset the buffer to be an empty string
-      i = i + bufferlen;
+      i = i + bufferlen; 
       bufferlen = 0; // reset bufferlen
-      recv(socketFD,buffer,sizeof(int),0);
+      recv(socketFD,buffer,sizeof(int),0); //Receive length from server
       bufferlen = buffer[0];
+      
+      //If bufferlen is 0 we are done.
         if (bufferlen == 0)
 	  {
 	    printf("Message received at client: \n%s \n",msg);
-	    free(msg);
-	    free(buffer);
+	     if(sizeof(msg) >0)
+	     {
+	       // free(msg); //Free memory.
+	       }
+	       if(sizeof(buffer) >0)
+	      {
+		//	free(buffer);
+		} 
             return; // finish on 0 length message
           }
-	recv(socketFD,msg+i,bufferlen,0);
-        /* TODO receive incoming message into buffer...remember to check for errors! */
-        /* TODO print message to stdout */
-        
-        /* TODO remember to allocate and free the receive buffer */
-        //free(msg);
+	recv(socketFD,msg+i,bufferlen,0); //Receive result form server
     }
 }
 
@@ -108,9 +110,11 @@ static int connect_client(in_addr_t serverIP, int portNumber) {
     int attempts = 0, result = -1;
     struct sockaddr_in serverINETAdress;
 
-    /* TODO create a socket to server in socketFD, with default protocol for stream (TCP) */
+      /*Creates socket to listen to in socketFD. Using ipv4 domain and 
+     sequenced reliable connection with SOCK_STREAM over default TCP protocol (0)*/
     socketFD = socket(AF_INET, SOCK_STREAM, 0);
 
+     /* initialize adresses of server. (Sets bytes to 0) */
     bzero((void *) &serverINETAdress, sizeof(serverINETAdress));
 
     serverINETAdress.sin_family = AF_INET;       /* Internet domain */
@@ -119,7 +123,7 @@ static int connect_client(in_addr_t serverIP, int portNumber) {
 
     fprintf(stderr, "Connecting to: %s %d\n", inet_ntoa(serverINETAdress.sin_addr), portNumber);
 
-    /* TODO try to connect until number of TRIES is exceeded */
+    //Try to connect until number of tries is exceeded.
     while(1)
     {
      if( connect(socketFD, (struct sockaddr *)&serverINETAdress, sizeof(serverINETAdress)) < 0)

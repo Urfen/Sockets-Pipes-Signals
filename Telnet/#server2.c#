@@ -108,7 +108,7 @@ static void server_handler(void) {
 	    return;
 	  }
 	/*popen opens a process by creating a pipe, forking and invoking the              shell
-	  Command parameter is the message receeived from client. "r" means                read.popen returns a stream that can be read. */
+	  Command parameter is the message receeived from client. "r" means                read. popen returns a stream that can be read. */
 	FILE* file = popen(msg,"r");
 	if(file == NULL)
 	  {

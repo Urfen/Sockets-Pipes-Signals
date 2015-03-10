@@ -19,7 +19,7 @@ main(int argc, char* argv[])
     if(pid1==0)
     {
         printf("Child process 1 executing ls -la \n");
-        dup2(pipefd[WRITE_END], 1); //Connect child porcess stdout to write-end
+        dup2(pipefd[WRITE_END], 1); //Connect child porcess stdout to write-end (dup2 makes stdout be a copy of pipefd write-end).
         close(pipefd[WRITE_END]);  //Close write- and read-end.
 	close(pipefd[READ_END]);
         execlp("ls", "ls", "-la", NULL); //execute ls -la
@@ -34,7 +34,7 @@ main(int argc, char* argv[])
         if(pid2==0)
         {
             printf("Child process 2 executing less \n");
-            dup2(pipefd[READ_END], 0); //Connect child process stdin to read-end
+            dup2(pipefd[READ_END], 0); //Connect child process stdin to read-end (dup2 makes stdin be a copy of pipefd read-end).
             close(pipefd[READ_END]);   //Close write- and read-end
 	    close(pipefd[WRITE_END]);
 	    execlp("less", "less", NULL); //execute less
